@@ -1,4 +1,4 @@
-                                  character count
+                                              character count
 #include<stdio.h>
 #include<string.h>
 #include<stdlib.h>
@@ -38,7 +38,7 @@ return 0;
 
 
 
-                            bitstuffing
+                                                 bitstuffing
 #include<stdio.h>
 #include<string.h>
 int main() {
@@ -134,7 +134,7 @@ return 0;
 
 
 
-                               gobackn
+                                             gobackn
 #include<stdlib.h>
 #include<stdio.h>
 #include<time.h>
@@ -176,7 +176,7 @@ i+=x;
 
 
 
-                               selectiverepeat
+                                              selectiverepeat
 
 #include<stdio.h>
 int main()
@@ -235,7 +235,7 @@ i+=x;
 
 
 
-                                  dijkstra
+                                                  dijkstra
 #include<stdio.h>
 #define INFINITY 9999
 #define MAX 10
@@ -471,7 +471,7 @@ int main()
 
 
 
-                      crc
+                                                      crc
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -602,7 +602,7 @@ int main()
 
 
 
-                         leakybucket
+                                               leakybucket
 #include <stdio.h>
 int main() {
     // Write C code here
@@ -641,7 +641,7 @@ int main() {
 }
 
 
-                                nmap
+                                                   nmap
 sudo apt-get install nmap
 nmap
 ifconfig
@@ -659,7 +659,7 @@ nmap inet
 
 
 
-Week 13
+                                                  Week 13
 # first.tcl
 set ns [new Simulator]
 $ns color 1 Blue
@@ -716,7 +716,175 @@ $ns run
 
 
 
-trace.tcl
+                                             trace.tcl
+
+set ns [new Simulator]
+
+$ns color 1 Blue
+$ns color 2 Red
+
+set nt [open out.tr w]
+$ns trace-all $nt
+
+proc finish {} {
+	global ns nt
+	$ns flush-trace
+	close $nt
+	exec awk -f loss.awk out.tr &
+	exit 0
+}
+
+set n0 [$ns node]
+set n1 [$ns node]
+set n2 [$ns node]
+set n3 [$ns node]
+
+$ns duplex-link $n0 $n2 20Mb 10ms DropTail
+$ns duplex-link $n1 $n2 20Mb 10ms DropTail
+$ns duplex-link $n2 $n3 5Mb 20ms DropTail
+
+$ns queue-limit $n2 $n3 5
+
+$ns duplex-link-op $n0 $n2 orient right-down
+$ns duplex-link-op $n1 $n2 orient right-up
+$ns duplex-link-op $n2 $n3 orient right
+
+set tcp [new Agent/TCP]
+$tcp set class_ 2
+$ns attach-agent $n0 $tcp
+set sink [new Agent/TCPSink]
+$ns attach-agent $n3 $sink
+$ns connect $tcp $sink
+$tcp set fid_ 1
+
+set ftp [new Application/FTP]
+$ftp attach-agent $tcp
+$ftp set type_ FTP
+$ftp set packet_size_ 1000
+$ftp set rate_ 1mb
+
+set udp [new Agent/UDP]
+$ns attach-agent $n1 $udp
+set null [new Agent/Null]
+$ns attach-agent $n3 $null
+$ns connect $udp $null
+$udp set fid_ 2
+
+set cbr [new Application/Traffic/CBR]
+$cbr attach-agent $udp
+$cbr set type_ CBR
+$cbr set packet_size_ 1000
+$cbr set rate_ 1mb
+
+$ns at 1.0 "$ftp start"
+$ns at 2.0 "$ftp stop"
+$ns at 1.5 "$cbr start"
+$ns at 3.0 "$cbr stop"
+
+$ns at 5.0 "finish"
+$ns run
+
+
+
+
+
+                              loss1.awk
+
+
+BEGIN {
+drop=0
+}
+{
+if($1=="d" && $4==3) {
+drop++
+}
+}
+END {
+printf("No.of packets dropped: %d",drop)
+}
+
+                                          loss.awk
+
+BEGIN {
+tdrop=0
+udrop=0
+}
+{
+
+if($1=="d" && $4==3 && $5=="tcp") {
+tdrop++
+}
+if($1=="d" && $4==3 && $5=="cbr") {
+udrop++
+}
+}
+END {
+printf("No.of tcp packets dropped: %d",tdrop)
+printf("No.of udp packets dropped: %d",udrop)
+}
+
+
+                                  throughput.awk
+
+BEGIN {
+fsize=0
+stime=0
+ftime=0
+latency=0
+flag=0
+throughpu=0
+}
+{
+if($1=="r" && $4==3) {
+fsize+=$6
+if(flag==0) {
+stime=$2
+flag=1
+}
+ftime=$2
+}
+}
+END {
+
+latency=ftime-stime
+throughput=(fsize*8)/latency
+printf("Latency: %f\n",latency)
+printf("Throughput: %f\n",throughput)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 set ns [new Simulator]
 $ns color 1 Blue
 $ns color 2 Red
